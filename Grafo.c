@@ -240,17 +240,19 @@ int ondeClicou(Digrafo G, int mousex, int mousey){ /*Retorna o vértice mais pert
 }
 
 void inserirPonto(Digrafo G, int pontos[], ALLEGRO_BITMAP *flag){ /*Desenha uma bandeira no ponto inserido*/
+    int i;
+
     for(i=0;i<G->V;i++)
         if(pontos[i])
-            al_draw_bitmap(flag,G->x[base]-2,G->y[base]-32,0);
+            al_draw_bitmap(flag,G->x[i]-2,G->y[i]-32,0);
 }
 
 int main(){
-    bool exit = false;
-    int i,j,fase=0,OP;
-    Vertex base=consultarBase();
-    Digrafo G = iniciarGrafo(33);
-    bool *pontos = malloc(G->V*sizeof(int));
+    bool exit = false; /*false se o usuario ainda nao saiu do programa*/
+    int i,j,fase=0,OP; /*i e j variaveis auxiliares, fase é o controlador de status do programa, OP é a opção do status 0*/
+    Vertex base=consultarBase(); /*a base recebe inicialmente o que está no arquivo base.txt*/
+    Digrafo G = iniciarGrafo(33); /*Grafo no qual se baseia o mapa*/
+    bool *pontos = malloc(G->V*sizeof(int)); /*Pontos onde o usuario clicou*/
 
 
     ALLEGRO_TIMER *timer = NULL;
