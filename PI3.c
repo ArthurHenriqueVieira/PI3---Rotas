@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdbool.h>
+#include <time.h>
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_image.h>
 #include <allegro5/allegro_primitives.h>
@@ -355,14 +356,15 @@ void inserirPonto(Digrafo G, int pontos[], ALLEGRO_BITMAP *flag){ /*Desenha uma 
 }
 
 int main(){
-    bool exit=false,selecionouPontos = false,menuEnabled=false,*mostrarCiclista; /*false se o usuario ainda nao saiu do programa*/
+    bool exit=false,selecionouPontos = false,menuEnabled=false,*mostrarCiclista,timeClock = false; /*false se o usuario ainda nao saiu do programa*/
+    clock_t tempoInicial, tempoFinal;
+    float tempoGasto=0.0;
     int i,j,quantCiclistas=0,fase=0,OP; /*i e j variaveis auxiliares, fase é o controlador de status do programa, OP é a opção do status 0*/
     Vertex base=consultarBase(); /*a base recebe inicialmente o que está no arquivo base.txt*/
     Digrafo G = iniciarGrafo(33); /*Grafo no qual se baseia o mapa*/
     int **pontos ; /*Pontos onde o usuario clicou*/
     int *pontosIniciais = malloc(G->V*sizeof(int));
     int *distancias;
-
     ALLEGRO_TIMER *timer = NULL;
     ALLEGRO_DISPLAY *janela = NULL;
     ALLEGRO_BITMAP *imagem = NULL;
@@ -554,6 +556,7 @@ int main(){
             break;
         case 1:
             i=0;
+            if(timeClock) tempoInicial = clock();
             al_wait_for_event(fila_de_eventos,&evento);
             al_draw_bitmap(imagem,0,0,0);
             desenharVertices(G);
@@ -566,7 +569,10 @@ int main(){
             if(!vetorVazio(pontosIniciais,G->V) && !selecionouPontos && tamanhoVetor(pontosIniciais,G->V)>=quantCiclistas){
                 al_draw_bitmap(startFlag,LARG-130,ALT-130,0);
             }
-
+            if(timeClock) {
+                tempoFinal = clock();
+                timeClock = false;
+            }
             al_draw_bitmap(pin,G->x[base]-16,G->y[base]-32,0);
             inserirPonto(G,pontosIniciais,flag);
 
@@ -602,14 +608,19 @@ int main(){
                 i++;
                 al_draw_line(LARG-245,170+(i*50),LARG,170+(i*50),al_map_rgb(0,0,0),3);
                 al_draw_textf(fonteMenuLateral, al_map_rgb(0,0,0), LARG-230, 130+(i*50), 0, "Sair");
+                tempoGasto = (tempoFinal-tempoInicial)*1000/CLOCKS_PER_SEC;
+                al_draw_textf(fonteMenuLateral, al_map_rgb(0,0,0), LARG-100, ALT - 40, 0, "%.0f ms",tempoGasto);
                 al_draw_bitmap(menu,LARG-240,20,0);
             }
             al_flip_display();
 
             if(evento.type ==  ALLEGRO_EVENT_KEY_DOWN){
                 if(evento.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
-                    if(menuEnabled) menuEnabled=false;
-                    else menuEnabled=true;
+                    if(menuEnabled){
+                        menuEnabled=false;
+                    } else {
+                        menuEnabled=true;
+                    }
                 }
                 if(evento.keyboard.keycode == ALLEGRO_KEY_SPACE){
                     if(selecionouPontos && !vetorVazio(pontosIniciais, G->V)){
@@ -635,6 +646,7 @@ int main(){
                             && evento.mouse.y >= ALT-120 && evento.mouse.y <= ALT-80){
                                 if(!selecionouPontos && tamanhoVetor(pontosIniciais,G->V)>=quantCiclistas){
                                     selecionouPontos = true;
+                                    timeClock = true;
                                     distribuirPontos(G,pontos,pontosIniciais,quantCiclistas,G->V);
                                 }
                             }
@@ -652,14 +664,12 @@ int main(){
                        && evento.mouse.y>=20 && evento.mouse.y <=56){
                         menuEnabled = false;
                     }
-                    al_draw_line(LARG-245,70,LARG,70,al_map_rgb(0,0,0),3);
-                    al_draw_textf(fonteMenuLateral, al_map_rgb(0,0,0), LARG-230, 80, 0, "Limpar Pontos");
-                    al_draw_line(LARG-245,120,LARG,120,al_map_rgb(0,0,0),1);
                     if(evento.mouse.x>=LARG-245 && evento.mouse.x<=LARG
                     && evento.mouse.y>=70 && evento.mouse.y<=120){
                         zerarVetor(pontosIniciais,G->V);
+                        zerarVetor(distancias,quantCiclistas);
                         for(i=0;i<quantCiclistas;i++){
-                            zerarVetor(pontos[i],i++);
+                            zerarVetor(pontos[i],G->V);
                         }
                         selecionouPontos=false;
                         menuEnabled=false;
